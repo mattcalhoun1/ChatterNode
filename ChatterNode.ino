@@ -278,21 +278,21 @@ void setupLogging () {
 
   if (serialConnected) {
     Logger::init(new SerialLogger());
-    Logger::setLogLevel (LogChatter, LogLevelDebug);
-    Logger::setLogLevel (LogStorage, LogLevelDebug);
+    Logger::setLogLevel (LogChatter, LogLevelInfo);
+    Logger::setLogLevel (LogStorage, LogLevelInfo);
     Logger::setLogLevel (LogEncryption, LogLevelInfo);
-    Logger::setLogLevel (LogComLora, LogLevelDebug);
+    Logger::setLogLevel (LogComLora, LogLevelInfo);
     Logger::setLogLevel (LogComWiFi, LogLevelInfo);
     Logger::setLogLevel (LogComWired, LogLevelInfo);
     Logger::setLogLevel (LogMesh, LogLevelInfo);
     Logger::setLogLevel (LogMeshStrategy, LogLevelInfo);
     Logger::setLogLevel (LogLicensing, LogLevelInfo);
-    Logger::setLogLevel (LogUi, LogLevelDebug);
+    Logger::setLogLevel (LogUi, LogLevelInfo);
     Logger::setLogLevel (LogUiEvents, LogLevelInfo);
     Logger::setLogLevel (LogAppControl, LogLevelInfo);
     Logger::setLogLevel (LogMeshGraph, LogLevelInfo);
     Logger::setLogLevel (LogLocation, LogLevelInfo);
-    Logger::setLogLevel (LogRtc, LogLevelDebug);
+    Logger::setLogLevel (LogRtc, LogLevelInfo);
     Logger::setLogLevel (LogOnboard, LogLevelInfo);
     Logger::setLogLevel (LogInit, LogLevelInfo);
     Logger::setLogLevel (LogBackup, LogLevelInfo); 

@@ -373,6 +373,7 @@ void ControlLayer::updateDisplay (const char lines[DISPLAY_NUM_LINES][DISPLAY_LI
             display->fillRect(0,0,1,display->height());
             display->display();
             somethingChanged = true;
+            lastGeneralProgress = generalProgress;
         }
 
         if (lastMeshCachePct != meshCachePct) {
@@ -380,6 +381,7 @@ void ControlLayer::updateDisplay (const char lines[DISPLAY_NUM_LINES][DISPLAY_LI
             display->fillRect(display->width() - 1,0,1,display->height());
             display->display();
             somethingChanged = true;
+            lastMeshCachePct = meshCachePct;
         }
 
 
