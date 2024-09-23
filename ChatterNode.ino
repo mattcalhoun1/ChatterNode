@@ -36,21 +36,18 @@ bool attemptedExternalRtc = false;
 unsigned long homeShowTime = 0;
 
 void setup() {
-    // Open serial communications and wait for port to open:
-    //Serial.begin(115200);
-  
     // disable watchdogs (for now) since sd and radio usage have unpredictable delays
     // and i dont want to add ticks in the various libraries
     disableCore0WDT();
     disableCore1WDT();
     disableLoopWDT();
 
+    setupLogging();
+
     AlmostRandom ar;
     randomSeed(ar.getRandomInt());
 
     setupBoard();
-
-    setupLogging();
 
     rtc = new GpsEsp32RtClock(SerialGPS, 0, true, &Wire1);
     rtc->setDstEnabled(true);

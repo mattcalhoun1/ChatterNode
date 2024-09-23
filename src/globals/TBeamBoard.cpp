@@ -41,22 +41,22 @@ bool beginPower()
     if (!PMU) {
         PMU = new XPowersAXP2101(PMU_WIRE_PORT);
         if (!PMU->init()) {
-            Serial.println("Warning: Failed to find AXP2101 power management");
+            Logger::warn("Warning: Failed to find AXP2101 power management", LogAppControl);
             delete PMU;
             PMU = NULL;
         } else {
-            Serial.println("AXP2101 PMU init succeeded, using AXP2101 PMU");
+            Logger::info("AXP2101 PMU init succeeded, using AXP2101 PMU", LogAppControl);
         }
     }
 
     if (!PMU) {
         PMU = new XPowersAXP192(PMU_WIRE_PORT);
         if (!PMU->init()) {
-            Serial.println("Warning: Failed to find AXP192 power management");
+            Logger::info("Warning: Failed to find AXP192 power management", LogAppControl);
             delete PMU;
             PMU = NULL;
         } else {
-            Serial.println("AXP192 PMU init succeeded, using AXP192 PMU");
+            Logger::info("AXP192 PMU init succeeded, using AXP192 PMU", LogAppControl);
         }
     }
 
@@ -153,7 +153,7 @@ bool beginPower()
 
         // In order to avoid bus occupation, during initialization, the SD card and QMC sensor are powered off and restarted
         if (ESP_SLEEP_WAKEUP_UNDEFINED == esp_sleep_get_wakeup_cause()) {
-            Serial.println("Power off and restart ALDO BLDO..");
+            Logger::info("Power off and restart ALDO BLDO..", LogAppControl);
             PMU->disablePowerOutput(XPOWERS_ALDO1);
             PMU->disablePowerOutput(XPOWERS_ALDO2);
             PMU->disablePowerOutput(XPOWERS_BLDO1);
@@ -221,6 +221,7 @@ bool beginPower()
     PMU->enableVbusVoltageMeasure();
     PMU->enableBattVoltageMeasure();
 
+    /*
     Serial.printf("=========================================\n");
     if (PMU->isChannelAvailable(XPOWERS_DCDC1)) {
         Serial.printf("DC1  : %s   Voltage: %04u mV \n",  PMU->isPowerChannelEnable(XPOWERS_DCDC1)  ? "+" : "-",  PMU->getPowerChannelVoltage(XPOWERS_DCDC1));
@@ -262,20 +263,19 @@ bool beginPower()
         Serial.printf("BLDO2: %s   Voltage: %04u mV \n",  PMU->isPowerChannelEnable(XPOWERS_BLDO2)  ? "+" : "-",  PMU->getPowerChannelVoltage(XPOWERS_BLDO2));
     }
     Serial.printf("=========================================\n");
-
+    */
 
     // Set the time of pressing the button to turn off
     PMU->setPowerKeyPressOffTime(XPOWERS_POWEROFF_4S);
     uint8_t opt = PMU->getPowerKeyPressOffTime();
-    Serial.print("PowerKeyPressOffTime:");
     switch (opt) {
-    case XPOWERS_POWEROFF_4S: Serial.println("4 Second");
+    case XPOWERS_POWEROFF_4S: Logger::info("PowerKeyPressOffTime:", "4 Second", LogAppControl);
         break;
-    case XPOWERS_POWEROFF_6S: Serial.println("6 Second");
+    case XPOWERS_POWEROFF_6S: Logger::info("PowerKeyPressOffTime:", "6 Second", LogAppControl);
         break;
-    case XPOWERS_POWEROFF_8S: Serial.println("8 Second");
+    case XPOWERS_POWEROFF_8S: Logger::info("PowerKeyPressOffTime:", "8 Second", LogAppControl);
         break;
-    case XPOWERS_POWEROFF_10S: Serial.println("10 Second");
+    case XPOWERS_POWEROFF_10S: Logger::info("PowerKeyPressOffTime:", "10 Second", LogAppControl);
         break;
     default:
         break;
@@ -315,34 +315,30 @@ void loopPMU()
     pmuInterrupt = false;
     // Get PMU Interrupt Status Register
     uint32_t status = PMU->getIrqStatus();
-    Serial.print("STATUS => HEX:");
-    Serial.print(status, HEX);
-    Serial.print(" BIN:");
-    Serial.println(status, BIN);
 
     if (PMU->isVbusInsertIrq()) {
-        Serial.println("isVbusInsert");
+        Logger::info("isVbusInsert", LogAppControl);
     }
     if (PMU->isVbusRemoveIrq()) {
-        Serial.println("isVbusRemove");
+        Logger::info("isVbusRemove", LogAppControl);
     }
     if (PMU->isBatInsertIrq()) {
-        Serial.println("isBatInsert");
+        Logger::info("isBatInsert", LogAppControl);
     }
     if (PMU->isBatRemoveIrq()) {
-        Serial.println("isBatRemove");
+        Logger::info("isBatRemove", LogAppControl);
     }
     if (PMU->isPekeyShortPressIrq()) {
-        Serial.println("isPekeyShortPress");
+        Logger::info("isPekeyShortPress", LogAppControl);
     }
     if (PMU->isPekeyLongPressIrq()) {
-        Serial.println("isPekeyLongPress");
+        Logger::info("isPekeyLongPress", LogAppControl);
     }
     if (PMU->isBatChagerDoneIrq()) {
-        Serial.println("isBatChagerDone");
+        Logger::info("isBatChagerDone", LogAppControl);
     }
     if (PMU->isBatChagerStartIrq()) {
-        Serial.println("isBatChagerStart");
+        Logger::info("isBatChagerStart", LogAppControl);
     }
     // Clear PMU Interrupt Status Register
     PMU->clearIrqStatus();
@@ -353,32 +349,31 @@ void loopPMU()
 void printWakeupReason()
 {
 #ifdef ESP32
-    Serial.print("Reset reason:");
     esp_sleep_wakeup_cause_t wakeup_reason;
     wakeup_reason = esp_sleep_get_wakeup_cause();
     switch (wakeup_reason) {
     case ESP_SLEEP_WAKEUP_UNDEFINED:
-        Serial.println(" In case of deep sleep, reset was not caused by exit from deep sleep");
+        Logger::info(" In case of deep sleep, reset was not caused by exit from deep sleep", LogAppControl);
         break;
     case ESP_SLEEP_WAKEUP_ALL :
         break;
     case ESP_SLEEP_WAKEUP_EXT0 :
-        Serial.println("Wakeup caused by external signal using RTC_IO");
+        Logger::info("Wakeup caused by external signal using RTC_IO", LogAppControl);
         break;
     case ESP_SLEEP_WAKEUP_EXT1 :
-        Serial.println("Wakeup caused by external signal using RTC_CNTL");
+        Logger::info("Wakeup caused by external signal using RTC_CNTL", LogAppControl);
         break;
     case ESP_SLEEP_WAKEUP_TIMER :
-        Serial.println("Wakeup caused by timer");
+        Logger::info("Wakeup caused by timer", LogAppControl);
         break;
     case ESP_SLEEP_WAKEUP_TOUCHPAD :
-        Serial.println("Wakeup caused by touchpad");
+        Logger::info("Wakeup caused by touchpad", LogAppControl);
         break;
     case ESP_SLEEP_WAKEUP_ULP :
-        Serial.println("Wakeup caused by ULP program");
+        Logger::info("Wakeup caused by ULP program", LogAppControl);
         break;
     default :
-        Serial.printf("Wakeup was not caused by deep sleep: %d\n", wakeup_reason);
+        Logger::info("Wakeup was not caused by deep sleep", LogAppControl);
         break;
     }
 #endif
@@ -387,10 +382,6 @@ void printWakeupReason()
 
 void getChipInfo()
 {
-#if defined(ARDUINO_ARCH_ESP32)
-
-    Serial.println("-----------------------------------");
-
     printWakeupReason();
 
 #if defined(CONFIG_IDF_TARGET_ESP32)  ||  defined(CONFIG_IDF_TARGET_ESP32S3)
@@ -398,70 +389,27 @@ void getChipInfo()
     if (psramFound()) {
         uint32_t psram = ESP.getPsramSize();
         devInfo.psramSize = psram / 1024.0 / 1024.0;
-        Serial.printf("PSRAM is enable! PSRAM: %.2fMB\n", devInfo.psramSize);
+        Logger::info("PSRAM is enabled!", LogAppControl);
     } else {
-        Serial.println("PSRAM is disable!");
+        Logger::info("PSRAM is disabled!", LogAppControl);
         devInfo.psramSize = 0;
     }
 
 #endif
 
-    Serial.print("Flash:");
     devInfo.flashSize       = ESP.getFlashChipSize() / 1024.0 / 1024.0;
     devInfo.flashSpeed      = ESP.getFlashChipSpeed() / 1000 / 1000;
     devInfo.chipModel       = ESP.getChipModel();
     devInfo.chipModelRev    = ESP.getChipRevision();
     devInfo.chipFreq        = ESP.getCpuFreqMHz();
 
-    Serial.print(devInfo.flashSize);
-    Serial.println(" MB");
-    Serial.print("Flash speed:");
-    Serial.print(devInfo.flashSpeed);
-    Serial.println(" M");
-    Serial.print("Model:");
 
-    Serial.println(devInfo.chipModel);
-    Serial.print("Chip Revision:");
-    Serial.println(devInfo.chipModelRev);
-    Serial.print("Freq:");
-    Serial.print(devInfo.chipFreq);
-    Serial.println(" MHZ");
-    Serial.print("SDK Ver:");
-    Serial.println(ESP.getSdkVersion());
-    Serial.print("DATE:");
-    Serial.println(__DATE__);
-    Serial.print("TIME:");
-    Serial.println(__TIME__);
-
-    Serial.print("EFUSE MAC: ");
-    Serial.print( ESP.getEfuseMac(), HEX);
-    Serial.println();
-
-    Serial.println("-----------------------------------");
-
-#elif defined(ARDUINO_ARCH_STM32)
-    uint32_t uid[3];
-
-    uid[0] = HAL_GetUIDw0();
-    uid[1] = HAL_GetUIDw1();
-    uid[2] = HAL_GetUIDw2();
-    Serial.print("STM UID: 0X");
-    Serial.print( uid[0], HEX);
-    Serial.print( uid[1], HEX);
-    Serial.print( uid[2], HEX);
-    Serial.println();
-#endif
 }
 
 
 
 void setupBoard()
 {
-    Serial.begin(115200);
-
-    // while (!Serial);
-
-    Serial.println("setupBoards");
 
     getChipInfo();
 
@@ -544,7 +492,7 @@ void setupBoard()
 
     beginWiFi();
     */
-    Serial.println("init done . ");
+    Logger::info("init done . ", LogAppControl);
 }
 
 
@@ -579,16 +527,14 @@ bool beginGPS()
         delay(5);
         // Get version information
         startTimeout = millis() + 3000;
-        Serial.print("Try to init L76K . Wait stop .");
+        Logger::info("Try to init L76K . Wait stop .", LogAppControl);
         while (SerialGPS.available()) {
-            Serial.print(".");
             SerialGPS.readString();
             if (millis() > startTimeout) {
-                Serial.println("Wait L76K stop NMEA timeout!");
+                Logger::info("Wait L76K stop NMEA timeout!", LogAppControl);
                 return false;
             }
         };
-        Serial.println();
         SerialGPS.flush();
         delay(200);
 
@@ -597,14 +543,14 @@ bool beginGPS()
         String ver = "";
         while (!SerialGPS.available()) {
             if (millis() > startTimeout) {
-                Serial.println("Get L76K timeout!");
+                Logger::info("Get L76K timeout!", LogAppControl);
                 return false;
             }
         }
         SerialGPS.setTimeout(10);
         ver = SerialGPS.readStringUntil('\n');
         if (ver.startsWith("$GPTXT,01,01,02")) {
-            Serial.println("L76K GNSS init succeeded, using L76K GNSS Module\n");
+            Logger::info("L76K GNSS init succeeded, using L76K GNSS Module", LogAppControl);
             result = true;
             break;
         }
