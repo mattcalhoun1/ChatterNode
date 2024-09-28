@@ -443,7 +443,21 @@ void ControlMode::processOneCycle(ControlCycleType cycleType) {
           }
         }
 
-        ((ChatterViewCallback*)globalCallbackRegistry->getCallback(CallbackChatStatus))->messageReceived();
+        // if it's a command, execute it
+        if (chatter->getMessageFlags().Flag0 == MessageTypeControl && isRemoteCommand(messageBuffer, messageBufferLength)) {
+          // in node, remote commands are always enabled
+          //if (preferenceHandler->isPreferenceEnabled(PreferenceRemoteConfigEnabled)) {
+            Logger::warn("Executing command: ", (const char*)messageBuffer, LogAppControl);
+            executeRemoteCommand(messageBuffer, otherDeviceId);
+          //}
+          else {
+            Logger::warn("Received remote command, but not enabled on this device!", LogAppControl);
+          }
+        }
+        else {
+          ((ChatterViewCallback*)globalCallbackRegistry->getCallback(CallbackChatStatus))->messageReceived();
+        }
+
       }
 
       ((ChatterViewCallback*)globalCallbackRegistry->getCallback(CallbackChatStatus))->yieldForProcessing();
@@ -833,4 +847,119 @@ void ControlMode::continueJoining () {
             restartDevice();
         }
     }
+}
+
+
+bool ControlMode::isRemoteCommand (const uint8_t* msg, int msgLength) {
+  return msgLength >= 5 && memcmp(REMOTE_COMMAND_PREFIX, msg, 3) == 0 && msg[3] == ':';
+}
+
+bool ControlMode::isBackpackRequest (const uint8_t* msg, int msgLength) {
+  return msgLength >= 4 && memcmp("BK:", msg, 3) == 0;
+}
+
+float ControlMode::getBatteryLevel() {
+  uint32_t voltage = analogRead(TDECK_BAT_ADC) * 2;
+  float scaledVoltage = ((float)voltage/1000) +0.32;
+  float percentLeft = 1.0;
+
+  if (scaledVoltage < 4.2) {
+      percentLeft = scaledVoltage / 4.2;
+  }
+
+  return percentLeft;
+}
+
+bool ControlMode::executeRemoteCommand (uint8_t* message, const char* requestor) {
+  switch (message[4]) {
+    case RemoteCommandBattery:
+      // grab the battery level
+      sprintf((char*)messageBuffer, "%s %03d", "Battery:", getBatteryLevel());
+      Logger::info("RC Sending battery level to: ", requestor, LogAppControl);
+
+      // send to requestor
+      queueOutMessage(messageBuffer, strlen((char*)messageBuffer), requestor, 500);
+      return true;
+    case RemoteCommandUptime:
+      sprintf((char*)messageBuffer, "Uptime: %d min", (millis() / 1000)/60);
+      Logger::info("RC Sending uptime to: ", requestor, LogAppControl);
+
+      // send to requestor
+      queueOutMessage(messageBuffer, strlen((char*)messageBuffer), requestor, 500);
+      return true;
+    case RemoteCommandNeighbors:
+      rcNeighborCount = chatter->getPingTable()->loadNearbyDevices (PingQualityBad, rcNeighbors, 10, 90);
+      char* pos = (char*)messageBuffer;
+      const char* neighborsPrefix = "Neighbors: ";
+      memcpy(pos, neighborsPrefix, strlen(neighborsPrefix));
+      pos += strlen(neighborsPrefix);
+
+      memset(messageBuffer, 0, GUI_MESSAGE_BUFFER_SIZE);
+      for (uint8_t i = 0; i < rcNeighborCount; i++) {
+        if (i > 0){
+          memcpy(pos, ", ", 2);
+          pos += 2;
+        }
+
+        // copy either the device id or alias
+        memset(meshDevIdBuffer, 0, CHATTER_DEVICE_ID_SIZE + 1);
+        memset(meshAliasBuffer, 0, CHATTER_ALIAS_NAME_SIZE + 1);
+        chatter->loadDeviceId(rcNeighbors[i], meshDevIdBuffer);
+        if (chatter->getTrustStore()->loadAlias(meshDevIdBuffer, meshAliasBuffer)) {
+          // copy the alias
+          memcpy(pos, meshAliasBuffer, strlen(meshAliasBuffer));
+          pos += strlen(meshAliasBuffer);
+        }
+        else {
+          // just copy device id
+          memcpy(pos, meshDevIdBuffer, CHATTER_DEVICE_ID_SIZE);
+          pos += CHATTER_DEVICE_ID_SIZE;
+        }
+      }
+
+      Logger::info("RC neighbors to: ", requestor, LogAppControl);
+
+      // send to requestor
+      queueOutMessage(messageBuffer, strlen((char*)messageBuffer), requestor, 500);
+      return true;
+  }
+
+  Logger::warn("unknown remote config", LogAppControl);
+  return false;
+}
+
+void ControlMode::populateMeshPath (const char* recipientId) {
+  meshPathLength = chatter->findMeshPath (chatter->getDeviceId(), recipientId, meshPath);
+
+  // copy the path into the message buffer so we can display
+  memset(messageBuffer, 0, GUI_MAX_MESSAGE_LENGTH+1);
+  uint8_t* pos = messageBuffer;
+
+  if (meshPathLength > 0) {
+    for (uint8_t p = 0; p < meshPathLength; p++) {
+      memset(meshDevIdBuffer, 0, CHATTER_DEVICE_ID_SIZE + 1);
+      memset(meshAliasBuffer, 0, CHATTER_ALIAS_NAME_SIZE + 1);
+
+      // find cluster device with that address
+      chatter->loadDeviceId(meshPath[p], meshDevIdBuffer);
+
+      // laod from truststore
+      if (chatter->getTrustStore()->loadAlias(meshDevIdBuffer, meshAliasBuffer)) {
+        memcpy(pos, meshAliasBuffer, strlen(meshAliasBuffer));
+        pos += strlen(meshAliasBuffer);
+      }
+      else {
+        sprintf((char*)pos, "%c%s%c", '[', meshDevIdBuffer, ']');
+        pos += (2 + CHATTER_DEVICE_ID_SIZE);
+      }
+
+      if (p+1 < meshPathLength) {
+        memcpy(pos, " -> ", 4);
+        pos += 4;
+      }
+    }
+  }
+  else {
+    memcpy(pos, "no path!", 8);
+  }  
 }

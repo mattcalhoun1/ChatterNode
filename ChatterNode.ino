@@ -263,6 +263,8 @@ bool isRtcReady () {
 
 
 void setupLogging () {
+  Serial.begin(115200);
+
   unsigned long serialWait = 1000;
   unsigned long serialStartTime = millis();
   bool serialConnected = true;

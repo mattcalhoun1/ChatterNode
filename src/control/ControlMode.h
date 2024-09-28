@@ -6,7 +6,7 @@
 #include "../events/CommunicatorEvent.h"
 #include "../callbacks/CallbackRegistry.h"
 #include "../callbacks/ChatterViewCallback.h"
-
+#include "../events/RemoteCommand.h"
 #include "BasicControl.h"
 #include "../prefs/PreferenceHandler.h"
 #include "../prefs/PreferenceHandlerImpl.h"
@@ -153,6 +153,7 @@ class ControlMode : public ChatStatusCallback, public BackupCallback, public Lic
     void restartDevice();
     void setLearningEnabled (bool _enabled) { learningModeEnabled = _enabled; }
     void setRemoteConfigEnabled (bool _enabled) { remoteConfigEnabled = _enabled; }
+    float getBatteryLevel ();
 
     /*******************/
 
@@ -190,6 +191,11 @@ class ControlMode : public ChatStatusCallback, public BackupCallback, public Lic
     PreferenceHandler* getPreferenceHandler () { return preferenceHandler; }
 
   protected:
+    bool executeRemoteCommand (uint8_t* message, const char* requestor);
+    void populateMeshPath (const char* recipientId);
+    bool isRemoteCommand (const uint8_t* msg, int msgLength);
+    bool isBackpackRequest (const uint8_t* msg, int msgLength);
+    RemoteCommandType getRemoteCommandFor (const char* commandName);
 
     bool clearMeshPacketsIfQueued ();
     bool meshPacketClearQueued = false;
@@ -199,13 +205,13 @@ class ControlMode : public ChatStatusCallback, public BackupCallback, public Lic
     SPIClass* sdSpiClass;
     
     /** fields for handling messages **/
-    uint8_t messageBuffer[GUI_MESSAGE_BUFFER_SIZE];
+    uint8_t messageBuffer[GUI_MESSAGE_BUFFER_SIZE+1];
     int messageBufferLength = 0;
     MessageType messageBufferType;
     char otherDeviceId[CHATTER_DEVICE_ID_SIZE+1];
     char otherClusterId[CHATTER_LOCAL_NET_ID_SIZE+CHATTER_GLOBAL_NET_ID_SIZE+1];
 
-    uint8_t outMessageBuffer[GUI_MESSAGE_BUFFER_SIZE];
+    uint8_t outMessageBuffer[GUI_MESSAGE_BUFFER_SIZE + 1];
     char outMessageRecipient[CHATTER_DEVICE_ID_SIZE+1];
     int outMessageBufferLength = 0;
     ControlMessageState outMessageStatus = ControlMessageUnknown;
@@ -262,5 +268,12 @@ class ControlMode : public ChatStatusCallback, public BackupCallback, public Lic
 
     void continueJoining ();
     bool joiningInitialized = false;
+
+    uint8_t meshPath[CHATTER_MESH_MAX_HOPS];
+    uint8_t meshPathLength = 0;
+    char meshDevIdBuffer[CHATTER_DEVICE_ID_SIZE + 1];
+    char meshAliasBuffer[CHATTER_ALIAS_NAME_SIZE + 1];        
+    uint8_t rcNeighborCount = 0;
+    uint8_t rcNeighbors[10];    
 };
 #endif
