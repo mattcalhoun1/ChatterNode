@@ -62,6 +62,8 @@
 #define HAS_DISPLAY
 #define HAS_PMU
 
+#define TBEAM_BAT_ADC 36 //?
+
 #define __HAS_SPI1__
 #define __HAS_SENSOR__
 

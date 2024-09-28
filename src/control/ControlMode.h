@@ -13,6 +13,7 @@
 
 #include "../forms/DeviceInitializationForm.h"
 #include <SHA256.h>
+#include <XPowersLib.h>
 
 #ifndef CONTROL_MODE_H
 #define CONTROL_MODE_H
@@ -86,7 +87,7 @@ enum ControlCycleType {
  */
 class ControlMode : public ChatStatusCallback, public BackupCallback, public LicenseCallback, public StorageStatusCallback, public BasicControl {
   public:
-    ControlMode (DeviceType _deviceType, RTClockBase* _rtc, CallbackRegistry* _callbackRegistry, uint8_t _sdPin, SPIClass & _sdSpiClass);
+    ControlMode (DeviceType _deviceType, RTClockBase* _rtc, CallbackRegistry* _callbackRegistry, uint8_t _sdPin, SPIClass & _sdSpiClass, XPowersLibInterface* _pmu);
 
     /** initialization methods **/
     virtual StartupState initEncryptedStorage();
@@ -275,5 +276,6 @@ class ControlMode : public ChatStatusCallback, public BackupCallback, public Lic
     char meshAliasBuffer[CHATTER_ALIAS_NAME_SIZE + 1];        
     uint8_t rcNeighborCount = 0;
     uint8_t rcNeighbors[10];    
+    XPowersLibInterface* pmu;
 };
 #endif

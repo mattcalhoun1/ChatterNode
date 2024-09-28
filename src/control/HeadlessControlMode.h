@@ -1,12 +1,13 @@
 #include "ChatterAll.h"
 #include "ControlMode.h"
+#include <XPowersLib.h>
 
 #ifndef HEADLESSCONTROLMODE_H
 #define HEADLESSCONTROLMODE_H
 
 class HeadlessControlMode : public ControlMode {
     public:
-        HeadlessControlMode (DeviceType _deviceType, RTClockBase* _rtc, CallbackRegistry* _callbackRegistry, uint8_t _sdPin, SPIClass & _sdSpiClass) : ControlMode(_deviceType, _rtc, _callbackRegistry, _sdPin, _sdSpiClass) {}
+        HeadlessControlMode (DeviceType _deviceType, RTClockBase* _rtc, CallbackRegistry* _callbackRegistry, uint8_t _sdPin, SPIClass & _sdSpiClass, XPowersLibInterface* _pmu) : ControlMode(_deviceType, _rtc, _callbackRegistry, _sdPin, _sdSpiClass, _pmu) {}
 
         // these methods need converted to callback approach
         uint8_t promptForPassword (char* passwordBuffer, uint8_t maxPasswordLength);

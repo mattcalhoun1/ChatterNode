@@ -1,11 +1,12 @@
 #include "ControlMode.h"
 
-ControlMode::ControlMode (DeviceType _deviceType, RTClockBase* _rtc, CallbackRegistry* _callbackRegistry, uint8_t _sdPin, SPIClass & _sdSpiClass) { 
+ControlMode::ControlMode (DeviceType _deviceType, RTClockBase* _rtc, CallbackRegistry* _callbackRegistry, uint8_t _sdPin, SPIClass & _sdSpiClass, XPowersLibInterface* _pmu) { 
   deviceType = _deviceType; 
   rtc = _rtc; 
   sdPin = _sdPin, 
   globalCallbackRegistry = _callbackRegistry;
   sdSpiClass = &_sdSpiClass;
+  pmu = _pmu;
 }
 
 StartupState ControlMode::initEncryptedStorage () {
@@ -450,9 +451,9 @@ void ControlMode::processOneCycle(ControlCycleType cycleType) {
             Logger::warn("Executing command: ", (const char*)messageBuffer, LogAppControl);
             executeRemoteCommand(messageBuffer, otherDeviceId);
           //}
-          else {
-            Logger::warn("Received remote command, but not enabled on this device!", LogAppControl);
-          }
+          //else {
+          //  Logger::warn("Received remote command, but not enabled on this device!", LogAppControl);
+          //}
         }
         else {
           ((ChatterViewCallback*)globalCallbackRegistry->getCallback(CallbackChatStatus))->messageReceived();
@@ -859,15 +860,10 @@ bool ControlMode::isBackpackRequest (const uint8_t* msg, int msgLength) {
 }
 
 float ControlMode::getBatteryLevel() {
-  uint32_t voltage = analogRead(TDECK_BAT_ADC) * 2;
-  float scaledVoltage = ((float)voltage/1000) +0.32;
-  float percentLeft = 1.0;
-
-  if (scaledVoltage < 4.2) {
-      percentLeft = scaledVoltage / 4.2;
+  if (pmu->isBatteryConnect()) {
+    return pmu->getBatteryPercent();
   }
-
-  return percentLeft;
+  return 1.0;
 }
 
 bool ControlMode::executeRemoteCommand (uint8_t* message, const char* requestor) {

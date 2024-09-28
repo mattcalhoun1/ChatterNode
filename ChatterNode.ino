@@ -120,7 +120,7 @@ void startChatterNextStep () {
       // over on the other cpu
       if (control == nullptr) {
 
-        control = new HeadlessControlMode(DeviceTypeBase, rtc, callbackRegistry, SDCARD_CS, SDCardSPI);
+        control = new HeadlessControlMode(DeviceTypeBase, rtc, callbackRegistry, SDCARD_CS, SDCardSPI, PMU);
       }
 
 
