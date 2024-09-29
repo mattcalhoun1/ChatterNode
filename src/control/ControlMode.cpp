@@ -372,6 +372,9 @@ void ControlMode::processOneCycle(ControlCycleType cycleType) {
 
   int numPacketsThisCycle = 0;
 
+  // reset the progress
+  updateChatProgress(0.0);
+
   if (outMessageStatus == ControlMessageNew) {
     // if we've reached the scheduled time, send it
     if (millis() >= outMessageScheduledTime){
@@ -885,12 +888,13 @@ bool ControlMode::executeRemoteCommand (uint8_t* message, const char* requestor)
       return true;
     case RemoteCommandNeighbors:
       rcNeighborCount = chatter->getPingTable()->loadNearbyDevices (PingQualityBad, rcNeighbors, 10, 90);
+      memset(messageBuffer, 0, GUI_MESSAGE_BUFFER_SIZE);
+
       char* pos = (char*)messageBuffer;
       const char* neighborsPrefix = "Neighbors: ";
       memcpy(pos, neighborsPrefix, strlen(neighborsPrefix));
       pos += strlen(neighborsPrefix);
 
-      memset(messageBuffer, 0, GUI_MESSAGE_BUFFER_SIZE);
       for (uint8_t i = 0; i < rcNeighborCount; i++) {
         if (i > 0){
           memcpy(pos, ", ", 2);

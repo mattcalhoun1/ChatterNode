@@ -123,6 +123,7 @@ class ControlMode : public ChatStatusCallback, public BackupCallback, public Lic
     void subChannelHopped ();
     void yieldForProcessing ();
     void updateMeshCacheUsed (float percent);
+    void setUiEnabled (bool enableInterrupt){}
 
     void notifyUiInterruptReceived ();
 
