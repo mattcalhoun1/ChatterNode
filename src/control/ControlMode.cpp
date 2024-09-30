@@ -499,6 +499,9 @@ void ControlMode::processOneCycle(ControlCycleType cycleType) {
       }
     }
   }
+
+  // flush gps buffer, if this rtc needs it
+  rtc->cycleOnce();
 }
 
 // does an immediate factory reset
