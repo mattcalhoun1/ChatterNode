@@ -71,16 +71,9 @@ enum ControlCycleType {
   ControlCycleFull = 1
 };
 
-#define MESSAGE_STORE_DELAY 5000 // wait
-#define MESH_PACKET_STORE_DELAY 5000//*2 // wait
-#define PING_TABLE_STORE_DELAY 5000//*2 // wait
-#define MESH_GRAPH_STORE_DELAY 5000//*5 // wait
-
 #define STORAGE_PRUNE_DELAY 60000*10 // 10 min
 #define CHATTER_POLL_COUNT_PER_CYCLE_RESPONSIVE 2
 #define CHATTER_POLL_COUNT_PER_CYCLE_FULL 10
-
-#define GPS_REFRESH_MAX_WAIT 3000
 
 /**
  * Base class for the different control modes available for this vehicle.
@@ -278,5 +271,7 @@ class ControlMode : public ChatStatusCallback, public BackupCallback, public Lic
     uint8_t rcNeighborCount = 0;
     uint8_t rcNeighbors[10];    
     XPowersLibInterface* pmu;
+
+    char logBuffer[128];
 };
 #endif

@@ -108,7 +108,7 @@ StartupState ControlMode::startChatter() {
     chatter->setKeyForwardingAllowed(preferenceHandler->isPreferenceEnabled(PreferenceKeyForwarding));
     chatter->setTruststoreLocked(preferenceHandler->isPreferenceEnabled(PreferenceTruststoreLocked));
     chatter->setLocationSharingEnabled(preferenceHandler->isPreferenceEnabled(PreferenceLocationSharingEnabled));
-    chatter->setLocationDeviceType(LocationDeviceHighPrecision);
+    chatter->setLocationDeviceType(LocationDeviceMediumPrecision);
 
     remoteConfigEnabled = preferenceHandler->isPreferenceEnabled(PreferenceRemoteConfigEnabled);
     if (remoteConfigEnabled) {
@@ -489,13 +489,18 @@ void ControlMode::processOneCycle(ControlCycleType cycleType) {
     }*/
 
     // the timings of these are controlled within chatter layer
-    if (cycleType == ControlCycleFull && chatter->isTimeToPruneStorage()) {
-      if (openStorage()) {
-        chatter->pruneStorage();
-        closeStorage();
+    if (cycleType == ControlCycleFull) {
+      if (cycleType == ControlCycleFull && chatter->isTimeToPruneStorage()) {
+        if (openStorage()) {
+          chatter->pruneStorage();
+          closeStorage();
+        }
+        else {
+            Logger::warn("Storage unavailable for pruning", LogAppControl);
+        }
       }
       else {
-          Logger::warn("Storage unavailable for pruning", LogAppControl);
+        flushStorage();
       }
     }
   }
@@ -514,21 +519,22 @@ bool ControlMode::flushStorage () {
   bool flushHappened = false;
   unsigned long now = millis();
 
-  // check each zone for whether flush is needed
-  // stop after any single flush, so we dont trigger timeout
-  for (uint8_t zone = 0; zone < CHATTER_STORAGE_ZONE_COUNT; zone++) {
-    if (nextFlush[zone] != 0 && now > nextFlush[zone]) {
-      if (chatter->isStorageDirty((StorageZone)zone)) {
-        char logBuff[32];
-        sprintf(logBuff, "flushing zone %d", zone);
-        Logger::info(logBuff, LogAppControl);
-        if (openStorage()) {
-          chatter->flushStorage((StorageZone)zone);
-          closeStorage();
-          nextFlush[zone] = 0;
 
+  // start with a random zone, and look until we find a dirty one to flush
+  // or until we've checked all zones
+  uint8_t currZone = random(0, CHATTER_STORAGE_ZONE_COUNT);
+  uint8_t zonesChecked = 0;
+  while (zonesChecked < CHATTER_STORAGE_ZONE_COUNT && flushHappened == false) {
+    zonesChecked++;
+    if (nextFlush[currZone] != 0 && now > nextFlush[currZone]) {
+      if (chatter->isStorageDirty((StorageZone)currZone)) {
+        sprintf(logBuffer, "flushing zone %d", currZone);
+        Logger::info(logBuffer, LogAppControl);
+        if (openStorage()) {
+          chatter->flushStorage((StorageZone)currZone);
+          closeStorage();
+          nextFlush[currZone] = 0;
           flushHappened = true;
-          zone = CHATTER_STORAGE_ZONE_COUNT;
         }
         else {
           Logger::warn("Storage unavailable for flush", LogAppControl);
@@ -537,13 +543,13 @@ bool ControlMode::flushStorage () {
     }
   }
 
-  if (flushHappened == false) {
-    // check each zone to see if another flush should be scheduled
-    for (uint8_t zone = 0; zone < CHATTER_STORAGE_ZONE_COUNT; zone++) {
-      if (nextFlush[zone] == 0 && chatter->isStorageDirty((StorageZone)zone)) {
-        if (chatter->isStorageDirty((StorageZone)zone)) {
-          nextFlush[zone] = now + flushDelay[zone];
-        }
+  // check each zone to see if another flush should be scheduled
+  for (uint8_t zone = 0; zone < CHATTER_STORAGE_ZONE_COUNT; zone++) {
+    if (nextFlush[zone] == 0) {
+      if (chatter->isStorageDirty((StorageZone)zone)) {
+        sprintf(logBuffer, "Scheduled for flush: %d (in %lu millis)", zone, now + flushDelay[zone]);
+        Logger::info(logBuffer, LogAppControl);
+        nextFlush[zone] = now + flushDelay[zone];
       }
     }
   }
@@ -632,8 +638,19 @@ bool ControlMode::getGpsCoords (double& latitude, double& longitude) {
   if (rtc->getGpsIsValid()) {
     latitude = rtc->getLatitude();
     longitude = rtc->getLongitude();
+    
+    float heading = 0.0;
+    float speed = 0.0;
 
-    chatter->getLocationStore()->updateLocation(chatter->getDeviceId(), rtc->getEpoch(), latitude, longitude, LocationDeviceMediumPrecision);
+    float altitude = rtc->getGpsAltitude();
+    if (rtc->getCourseIsValid()) {
+        heading = rtc->getCourseHeading();
+    }
+    if (rtc->getSpeedIsValid()) {
+        speed = rtc->getSpeed();
+    }
+
+    chatter->getLocationStore()->updateLocation(chatter->getDeviceId(), rtc->getEpoch(), latitude, longitude, altitude, heading, speed, LocationDeviceMediumPrecision);
 
     return true;
   }
