@@ -28,7 +28,8 @@
 enum TitleRotationItem {
     TitleAlias = 0,
     TitleTime = 1,
-    TitlePosition = 2
+    TitlePosition = 2,
+    TitleBattery = 3
 };
 
 enum ControlModeStatus {
@@ -169,6 +170,7 @@ class ControlLayer : public ChatterViewCallback {
 
     void updateTitle (const char* title);
     void updateSubtitle (const char* subtitle);
+    void updateNeighbors ();
     void rotateDisplay ();
 
     TitleRotationItem currTitleItem = TitleAlias;
@@ -188,6 +190,8 @@ class ControlLayer : public ChatterViewCallback {
     bool displayRunning = false;
 
     ChatStatus lastChatStatus = ChatDisconnected;
+    uint8_t lastNumNeighbors = 0;
+    uint32_t lastNeighborsUpdate = 0;
 };
 
 #endif

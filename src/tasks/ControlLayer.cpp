@@ -234,6 +234,9 @@ ControlModeStatus ControlLayer::initializeNextStep () {
                     status = ControlStartupInitializeDevice;
                 }
             }
+            else {
+                Logger::info("Messaging is paused", LogAppControl);
+            }
             break;
     }
 
@@ -313,6 +316,12 @@ void ControlLayer::rotateDisplay () {
                     sprintf(titleLine, "%s", "Location: [unavailable]");
                 }
                 break;
+            case TitlePosition:
+                // show battery level and num connections
+                currTitleItem = TitleBattery;
+                updateNeighbors();
+                sprintf(titleLine, "Neighbors: %d, Batt: %d", lastNumNeighbors, (int)control->getBatteryLevel());
+                break;
             default:
                 currTitleItem = TitleAlias;
                 sprintf(titleLine, "%s @ %s", control->getChatter()->getDeviceAlias(), control->getChatter()->getClusterAlias());
@@ -345,6 +354,11 @@ void ControlLayer::updateSubtitle (const char* subtitle) {
     updateDisplay(subtitle, DISPLAY_DASHBOARD_ROW);
 }
 
+void ControlLayer::updateNeighbors () {
+    if (lastNeighborsUpdate == 0 || millis() - lastNeighborsUpdate > 10000) {
+        lastNumNeighbors = control->getChatter()->getPingTable()->getNumNearbyDevices (PingQualityBad, 90);
+    }
+}
 
 void ControlLayer::updateDisplay (const char lines[DISPLAY_NUM_LINES][DISPLAY_LINE_WIDTH]) {
     if (displayRunning) {
@@ -370,7 +384,7 @@ void ControlLayer::updateDisplay (const char lines[DISPLAY_NUM_LINES][DISPLAY_LI
 
         if (lastGeneralProgress != generalProgress) {
             display->setColor(BLACK);
-            display->fillRect(0,0,1,display->height());
+            display->fillRect(0,0,2,display->height());
             display->display();
             somethingChanged = true;
             lastGeneralProgress = generalProgress;
@@ -378,7 +392,7 @@ void ControlLayer::updateDisplay (const char lines[DISPLAY_NUM_LINES][DISPLAY_LI
 
         if (lastMeshCachePct != meshCachePct) {
             display->setColor(BLACK);
-            display->fillRect(display->width() - 1,0,1,display->height());
+            display->fillRect(display->width() - 1,0,2,display->height());
             display->display();
             somethingChanged = true;
             lastMeshCachePct = meshCachePct;

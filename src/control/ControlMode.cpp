@@ -17,9 +17,9 @@ StartupState ControlMode::initEncryptedStorage () {
     Logger::info("RTC Time: ", rtc->getViewableTime(), LogAppControl);
 
     #if defined(STORAGE_FRAM_SPI)
-      chatter = new Chatter(ChatterDeviceBase, BasicMode, rtc, StorageFramSPI, this, this, this, this, STRONG_ENCRYPTION_ENABLED);
+      chatter = new Chatter(ChatterDeviceBase, BasicMode, rtc, StorageFramSPI, this, this, this, this, STRONG_ENCRYPTION_ENABLED, LicenseModelFree);
     #elif defined(STORAGE_SD_CARD)
-      chatter = new Chatter(ChatterDeviceBase, BasicMode, rtc, StorageSD, this, this, this, this, STRONG_ENCRYPTION_ENABLED);
+      chatter = new Chatter(ChatterDeviceBase, BasicMode, rtc, StorageSD, this, this, this, this, STRONG_ENCRYPTION_ENABLED, LicenseModelFree);
     #endif
 
     preferenceHandler = new PreferenceHandlerImpl(chatter, this);

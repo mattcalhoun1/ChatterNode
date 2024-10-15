@@ -106,7 +106,14 @@ void loop()
 
 // attempt to start chatter layer, when everything is read
 void startChatterNextStep () {
-  // first, GPS/rtc must be setup
+  if (PMU->isBatteryConnect()) {
+    if(PMU->getBatteryPercent() < 10) {
+      controlLayer->updateChatViewStatus("Low Battery");
+      delay(1000); // do nothing for a second
+      return;
+    }
+  }  
+  // second, GPS/rtc must be setup
   if (isRtcReady()) {
     if (currentChatterStatus == ChatterError) {
         Logger::error("Error during init!", LogAppControl);
@@ -130,6 +137,7 @@ void startChatterNextStep () {
         currentChatterStatus = ChatterInitializing;
       }
       else {
+        controlLayer->updateChatViewStatus("Insert Valid SD Card");
         Logger::error("Insert valid SD card...", LogAppControl);
         delay(3000);
       }

@@ -8,7 +8,7 @@
 
 //#define INCLUDE_vTaskSuspend 1 // wait indefinitely for semaphore
 
-#define CHATTERBOX_FIRMWARE_VERSION "0.6.0"
+#define CHATTERBOX_FIRMWARE_VERSION "1.0.0"
 #define STRONG_ENCRYPTION_ENABLED true // false for export
 
 #define RH_SX126x_MAX_MESSAGE_LEN 150
