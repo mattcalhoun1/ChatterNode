@@ -312,8 +312,11 @@ void ControlLayer::rotateDisplay () {
                 if(control->getGpsCoords(lat, lng)) {
                     sprintf(titleLine, "%.6f, %.6f", lat, lng);
                 }
+                else if (control->getChatter()->getRtc()->getGnssEnabled() == false) {
+                    sprintf(titleLine, "%s", "Location: [disabled]");
+                }
                 else {
-                    sprintf(titleLine, "%s", "Location: [unavailable]");
+                    sprintf(titleLine, "%s", "Location: [searching]");
                 }
                 break;
             case TitlePosition:

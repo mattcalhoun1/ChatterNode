@@ -110,6 +110,9 @@ StartupState ControlMode::startChatter() {
     chatter->setLocationSharingEnabled(preferenceHandler->isPreferenceEnabled(PreferenceLocationSharingEnabled));
     chatter->setLocationDeviceType(LocationDeviceMediumPrecision);
 
+    // apply user's selected gnss settings
+    preferenceHandler->applyGnssConfig();
+
     remoteConfigEnabled = preferenceHandler->isPreferenceEnabled(PreferenceRemoteConfigEnabled);
     if (remoteConfigEnabled) {
       Logger::info("Alert: Remote config is enabled!", LogAppControl);
@@ -634,6 +637,26 @@ bool ControlMode::initializeNewDevice (DeviceInitializationForm* initializationF
 }
 
 bool ControlMode::getGpsCoords (double& latitude, double& longitude) {
+  if (rtc->getGnssEnabled() == false) {
+    // check if prefs have it enabled
+    // it may have become disabled due to low battery
+    if (preferenceHandler->isPreferenceEnabled(PreferenceGnssEnabled)) {
+      if (((int)getBatteryLevel()) > 50) {
+        Logger::warn("Charge has risen above threshold, gps re-enabled", LogLocation);
+        rtc->setGnssEnabled(true);
+      }
+    }
+
+    return false;
+  }
+  else if (((int)getBatteryLevel()) < 20) {
+    // turn off gps to save battery
+    // will come back on when charge threshold is passed
+    Logger::warn("Charge has fallen below threshold, gps disabled", LogLocation);
+    rtc->setGnssEnabled(false);
+    return false; 
+  }
+
   showStatus("GPS");
   if (rtc->getGpsIsValid()) {
     latitude = rtc->getLatitude();
@@ -886,10 +909,10 @@ float ControlMode::getBatteryLevel() {
   if (pmu->isBatteryConnect()) {
     return pmu->getBatteryPercent();
   }
-  return 1.0;
+  return 100.0;
 }
 
-bool ControlMode::executeRemoteCommand (uint8_t* message, const char* requestor) {
+/*bool ControlMode::executeRemoteCommand (uint8_t* message, const char* requestor) {
   switch (message[4]) {
     case RemoteCommandBattery:
       // grab the battery level
@@ -946,7 +969,86 @@ bool ControlMode::executeRemoteCommand (uint8_t* message, const char* requestor)
 
   Logger::warn("unknown remote config", LogAppControl);
   return false;
+}*/
+bool ControlMode::executeRemoteCommand (uint8_t* message, const char* requestor) {
+  switch (message[4]) {
+    case RemoteCommandLocationDisable:
+      Logger::info("Requested to disable location: ", requestor, LogAppControl);
+      preferenceHandler->disablePreference(PreferenceGnssEnabled);
+      preferenceHandler->disablePreference(PreferenceLocationSharingEnabled);
+      queueOutMessage((uint8_t*)"GNSS and location sharing DISABLED", 34, requestor, 500);
+
+      return true;
+
+    case RemoteCommandLocationEnable:
+      Logger::info("Requested to enable location: ", requestor, LogAppControl);
+      preferenceHandler->enablePreference(PreferenceGnssEnabled);
+      preferenceHandler->enablePreference(PreferenceLocationSharingEnabled);
+      queueOutMessage((uint8_t*)"GNSS and location sharing ENABLED", 33, requestor, 500);
+
+      return true;
+
+    case RemoteCommandTriggerRelay:
+      Logger::info("Relay requested, but not onboard: ", requestor, LogAppControl);
+      queueOutMessage((uint8_t*)"No relay onboard", 16, requestor, 500);
+      return true;
+
+    case RemoteCommandBattery:
+      // grab the battery level
+      sprintf((char*)messageBuffer, "%s %03d", "Battery:", getBatteryLevel());
+      Logger::info("RC Sending battery level to: ", requestor, LogAppControl);
+
+      // send to requestor
+      queueOutMessage(messageBuffer, strlen((char*)messageBuffer), requestor, 500);
+      return true;
+    case RemoteCommandUptime:
+      sprintf((char*)messageBuffer, "Uptime: %d min", (millis() / 1000)/60);
+      Logger::info("RC Sending uptime to: ", requestor, LogAppControl);
+
+      // send to requestor
+      queueOutMessage(messageBuffer, strlen((char*)messageBuffer), requestor, 500);
+      return true;
+    case RemoteCommandNeighbors:
+      rcNeighborCount = chatter->getPingTable()->loadNearbyDevices (PingQualityBad, rcNeighbors, 10, 90);
+      char* pos = (char*)messageBuffer;
+      const char* neighborsPrefix = "Neighbors: ";
+      memcpy(pos, neighborsPrefix, strlen(neighborsPrefix));
+      pos += strlen(neighborsPrefix);
+
+      memset(messageBuffer, 0, GUI_MESSAGE_BUFFER_SIZE);
+      for (uint8_t i = 0; i < rcNeighborCount; i++) {
+        if (i > 0){
+          memcpy(pos, ", ", 2);
+          pos += 2;
+        }
+
+        // copy either the device id or alias
+        memset(meshDevIdBuffer, 0, CHATTER_DEVICE_ID_SIZE + 1);
+        memset(meshAliasBuffer, 0, CHATTER_ALIAS_NAME_SIZE + 1);
+        chatter->loadDeviceId(rcNeighbors[i], meshDevIdBuffer);
+        if (chatter->getTrustStore()->loadAlias(meshDevIdBuffer, meshAliasBuffer)) {
+          // copy the alias
+          memcpy(pos, meshAliasBuffer, strlen(meshAliasBuffer));
+          pos += strlen(meshAliasBuffer);
+        }
+        else {
+          // just copy device id
+          memcpy(pos, meshDevIdBuffer, CHATTER_DEVICE_ID_SIZE);
+          pos += CHATTER_DEVICE_ID_SIZE;
+        }
+      }
+
+      Logger::info("RC neighbors to: ", requestor, LogAppControl);
+
+      // send to requestor
+      queueOutMessage(messageBuffer, strlen((char*)messageBuffer), requestor, 500);
+      return true;
+  }
+
+  Logger::warn("unknown remote config", LogAppControl);
+  return false;
 }
+
 
 void ControlMode::populateMeshPath (const char* recipientId) {
   meshPathLength = chatter->findMeshPath (chatter->getDeviceId(), recipientId, meshPath);

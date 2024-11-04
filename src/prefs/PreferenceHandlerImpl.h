@@ -11,6 +11,7 @@ class PreferenceHandlerImpl : public PreferenceHandler {
         bool isPreferenceEnabled (CommunicatorPreference pref);
         void enablePreference (CommunicatorPreference pref);
         void disablePreference (CommunicatorPreference pref);
+        void applyGnssConfig ();
 
     protected:
         Chatter* chatter;

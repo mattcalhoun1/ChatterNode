@@ -18,7 +18,11 @@ enum RemoteCommandType {
     RemoteCommandMessagesClear = 'C',
     RemoteCommandUptime = 'U',
     RemoteCommandNeighbors = 'N',
+    RemoteCommandTriggerRelay = 'R',
+    RemoteCommandLocationEnable = 'L',
+    RemoteCommandLocationDisable = 'X',
     RemoteCommandUnknown = '?'
 };
+
 
 #endif

@@ -21,7 +21,12 @@ enum CommunicatorPreference {
     PreferenceTruststoreLocked = 16,
     PreferenceKeyForwarding = 17,
     PreferenceLocationSharingEnabled = 18,
-    PreferenceLocationMapTypeLink = 19
+    PreferenceLocationMapTypeLink = 19,
+    PreferenceGnssEnabled = 20, // gps remain on after initial startup
+    PreferenceGnssGPSEnabled = 21,
+    PreferenceGnssGlonassEnabled = 22,
+    PreferenceGnssBeiDouEnabled = 23,
+    PreferenceExperimentalFeaturesEnabled = 24    
 };
 
 enum StoredPreference {
@@ -34,7 +39,12 @@ enum StoredPreference {
     StoredPrefTruststoreLocked = 6,
     StoredPrefKeyForwarding = 7,
     StoredPrefLocationSharingEnabled = 8,
-    StoredPrefLocationMapTypeLink = 9
+    StoredPrefLocationMapTypeLink = 9,
+    StoredPrefGnssEnabled = 10,
+    StoredPrefGnssGPSEnabled = 11,
+    StoredPrefGnssGlonassEnabled = 12,
+    StoredPrefGnssBeiDouEnabled = 13,
+    StoredPrefExperimentalFeaturesEnabled = 14    
 };
 
 class PreferenceHandler {
@@ -42,6 +52,7 @@ class PreferenceHandler {
         virtual bool isPreferenceEnabled (CommunicatorPreference pref) = 0;
         virtual void enablePreference (CommunicatorPreference pref) = 0;
         virtual void disablePreference (CommunicatorPreference pref) = 0;
+        virtual void applyGnssConfig ();
 };
 
 #endif

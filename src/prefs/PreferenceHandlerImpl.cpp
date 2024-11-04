@@ -42,6 +42,16 @@ bool PreferenceHandlerImpl::isPreferenceEnabled (CommunicatorPreference pref) {
       return chatter->getDeviceStore()->getCustomPreference(StoredPrefLocationSharingEnabled) != 'F';
     case PreferenceLocationMapTypeLink:
       return chatter->getDeviceStore()->getCustomPreference(StoredPrefLocationMapTypeLink) != 'G'; // g for 'geo' link, vs 'l' for http link
+    case PreferenceGnssEnabled:
+      return chatter->getDeviceStore()->getCustomPreference(StoredPrefGnssEnabled) != 'F'; // gnss enabled by default
+    case PreferenceGnssGPSEnabled:
+      return chatter->getDeviceStore()->getCustomPreference(StoredPrefGnssGPSEnabled) != 'F'; // enabled by default
+    case PreferenceGnssGlonassEnabled:
+      return chatter->getDeviceStore()->getCustomPreference(StoredPrefGnssGlonassEnabled) != 'F'; // enabled by default
+    case PreferenceGnssBeiDouEnabled:
+      return chatter->getDeviceStore()->getCustomPreference(StoredPrefGnssBeiDouEnabled) != 'F'; // enabled by default
+    case PreferenceExperimentalFeaturesEnabled:
+      return chatter->getDeviceStore()->getCustomPreference(StoredPrefExperimentalFeaturesEnabled) == 'T'; // disabled by default
   }
 
   Logger::info("Unknown preference read attempt", LogAppControl);
@@ -153,8 +163,44 @@ void PreferenceHandlerImpl::enablePreference (CommunicatorPreference pref) {
       chatter->getDeviceStore()->setCustomPreference(StoredPrefLocationMapTypeLink, 'L');
       break;
 
+    case PreferenceGnssEnabled:
+      chatter->getDeviceStore()->setCustomPreference(StoredPrefGnssEnabled, 'T');
+      chatter->getRtc()->setGnssEnabled(true);
+      break;
+
+    case PreferenceGnssGPSEnabled:
+      chatter->getDeviceStore()->setCustomPreference(StoredPrefGnssGPSEnabled, 'T');
+      chatter->getDeviceStore()->setCustomPreference(StoredPrefGnssEnabled, 'T');
+      applyGnssConfig();
+      break;
+    case PreferenceGnssGlonassEnabled:
+      chatter->getDeviceStore()->setCustomPreference(StoredPrefGnssGlonassEnabled, 'T');
+      chatter->getDeviceStore()->setCustomPreference(StoredPrefGnssEnabled, 'T');
+      applyGnssConfig();
+      break;
+    case PreferenceGnssBeiDouEnabled:
+      chatter->getDeviceStore()->setCustomPreference(StoredPrefGnssBeiDouEnabled, 'T');
+      chatter->getDeviceStore()->setCustomPreference(StoredPrefGnssEnabled, 'T');
+      applyGnssConfig();
+
+      break;
+
+    case PreferenceExperimentalFeaturesEnabled:
+      chatter->getDeviceStore()->setCustomPreference(StoredPrefExperimentalFeaturesEnabled, 'T');
+      break;
+
     default:
       Logger::info("Unknown preference enable attempt", LogAppControl);
+  }
+}
+
+void PreferenceHandlerImpl::applyGnssConfig () {
+  if (isPreferenceEnabled(PreferenceGnssEnabled)) {
+      chatter->getRtc()->setGnssEnabled(true);
+      chatter->configureGnssPreferences (isPreferenceEnabled(PreferenceGnssGPSEnabled), isPreferenceEnabled(PreferenceGnssGlonassEnabled), isPreferenceEnabled(PreferenceGnssBeiDouEnabled));
+  }
+  else {
+      chatter->getRtc()->setGnssEnabled(false);
   }
 }
 
@@ -269,6 +315,28 @@ void PreferenceHandlerImpl::disablePreference (CommunicatorPreference pref) {
       chatter->getDeviceStore()->setCustomPreference(StoredPrefLocationMapTypeLink, 'G');
       break;
 
+    case PreferenceGnssEnabled:
+      chatter->getDeviceStore()->setCustomPreference(StoredPrefGnssEnabled, 'F');
+      chatter->getRtc()->setGnssEnabled(false);
+      break;
+
+    case PreferenceGnssGPSEnabled:
+      chatter->getDeviceStore()->setCustomPreference(StoredPrefGnssGPSEnabled, 'F');
+      applyGnssConfig();
+      break;
+    case PreferenceGnssGlonassEnabled:
+      chatter->getDeviceStore()->setCustomPreference(StoredPrefGnssGlonassEnabled, 'F');
+      applyGnssConfig();
+      break;
+    case PreferenceGnssBeiDouEnabled:
+      chatter->getDeviceStore()->setCustomPreference(StoredPrefGnssBeiDouEnabled, 'F');
+      applyGnssConfig();
+      break;
+
+    case PreferenceExperimentalFeaturesEnabled:
+      chatter->getDeviceStore()->setCustomPreference(StoredPrefExperimentalFeaturesEnabled, 'F');
+      break;
+      
     default:
       Logger::info("Unknown preference disable attempt", LogAppControl);
   }
