@@ -14,6 +14,8 @@
 #include "../forms/DeviceInitializationForm.h"
 #include <SHA256.h>
 #include <XPowersLib.h>
+#include "../backpacks/relay/RelayBackpack.h"
+#include "../backpacks/Backpack.h"
 
 #ifndef CONTROL_MODE_H
 #define CONTROL_MODE_H
@@ -273,5 +275,11 @@ class ControlMode : public ChatStatusCallback, public BackupCallback, public Lic
     XPowersLibInterface* pmu;
 
     char logBuffer[128];
+
+    Backpack* backpacks[MAX_BACKPACKS];
+    uint8_t numBackpacks = 0;
+    Backpack* getBackpack (BackpackType type);
+    Backpack* getBackpack (uint8_t* remoteRequest, int requestLength);
+
 };
 #endif

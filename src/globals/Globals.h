@@ -8,7 +8,7 @@
 
 //#define INCLUDE_vTaskSuspend 1 // wait indefinitely for semaphore
 
-#define CHATTERBOX_FIRMWARE_VERSION "1.0.2"
+#define CHATTERBOX_FIRMWARE_VERSION "1.0.3"
 #define STRONG_ENCRYPTION_ENABLED true // false for export
 
 #define RH_SX126x_MAX_MESSAGE_LEN 150
@@ -52,6 +52,7 @@
 #define LORA_DEFAULT_FREQUENCY LORA_DEFAULT_FREQUENCY_915
 
 #define BACKPACK_THERMAL_ENABLED false
+#define BACKPACK_RELAY_ENABLED true
 #define MAX_BACKPACKS 2
 
 //#define RH_PLATFORM 1

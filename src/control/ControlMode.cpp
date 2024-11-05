@@ -105,6 +105,19 @@ StartupState ControlMode::startChatter() {
 
     #endif
 
+      // check if backpack needs initialized
+      if (BACKPACK_RELAY_ENABLED) {
+        backpacks[numBackpacks] = new RelayBackpack (chatter, this);
+        if (backpacks[numBackpacks]->init()) {
+          Logger::info("Relay backpack ready!", LogAppControl);
+          numBackpacks += 1;
+        }
+        else {
+          Logger::info("Relay backpack init failed!", LogAppControl);
+        }
+      }
+
+
     chatter->setKeyForwardingAllowed(preferenceHandler->isPreferenceEnabled(PreferenceKeyForwarding));
     chatter->setTruststoreLocked(preferenceHandler->isPreferenceEnabled(PreferenceTruststoreLocked));
     chatter->setLocationSharingEnabled(preferenceHandler->isPreferenceEnabled(PreferenceLocationSharingEnabled));
@@ -912,64 +925,6 @@ float ControlMode::getBatteryLevel() {
   return 100.0;
 }
 
-/*bool ControlMode::executeRemoteCommand (uint8_t* message, const char* requestor) {
-  switch (message[4]) {
-    case RemoteCommandBattery:
-      // grab the battery level
-      sprintf((char*)messageBuffer, "%s %03d", "Battery:", getBatteryLevel());
-      Logger::info("RC Sending battery level to: ", requestor, LogAppControl);
-
-      // send to requestor
-      queueOutMessage(messageBuffer, strlen((char*)messageBuffer), requestor, 500);
-      return true;
-    case RemoteCommandUptime:
-      sprintf((char*)messageBuffer, "Uptime: %d min", (millis() / 1000)/60);
-      Logger::info("RC Sending uptime to: ", requestor, LogAppControl);
-
-      // send to requestor
-      queueOutMessage(messageBuffer, strlen((char*)messageBuffer), requestor, 500);
-      return true;
-    case RemoteCommandNeighbors:
-      rcNeighborCount = chatter->getPingTable()->loadNearbyDevices (PingQualityBad, rcNeighbors, 10, 90);
-      memset(messageBuffer, 0, GUI_MESSAGE_BUFFER_SIZE);
-
-      char* pos = (char*)messageBuffer;
-      const char* neighborsPrefix = "Neighbors: ";
-      memcpy(pos, neighborsPrefix, strlen(neighborsPrefix));
-      pos += strlen(neighborsPrefix);
-
-      for (uint8_t i = 0; i < rcNeighborCount; i++) {
-        if (i > 0){
-          memcpy(pos, ", ", 2);
-          pos += 2;
-        }
-
-        // copy either the device id or alias
-        memset(meshDevIdBuffer, 0, CHATTER_DEVICE_ID_SIZE + 1);
-        memset(meshAliasBuffer, 0, CHATTER_ALIAS_NAME_SIZE + 1);
-        chatter->loadDeviceId(rcNeighbors[i], meshDevIdBuffer);
-        if (chatter->getTrustStore()->loadAlias(meshDevIdBuffer, meshAliasBuffer)) {
-          // copy the alias
-          memcpy(pos, meshAliasBuffer, strlen(meshAliasBuffer));
-          pos += strlen(meshAliasBuffer);
-        }
-        else {
-          // just copy device id
-          memcpy(pos, meshDevIdBuffer, CHATTER_DEVICE_ID_SIZE);
-          pos += CHATTER_DEVICE_ID_SIZE;
-        }
-      }
-
-      Logger::info("RC neighbors to: ", requestor, LogAppControl);
-
-      // send to requestor
-      queueOutMessage(messageBuffer, strlen((char*)messageBuffer), requestor, 500);
-      return true;
-  }
-
-  Logger::warn("unknown remote config", LogAppControl);
-  return false;
-}*/
 bool ControlMode::executeRemoteCommand (uint8_t* message, const char* requestor) {
   switch (message[4]) {
     case RemoteCommandLocationDisable:
@@ -990,7 +945,22 @@ bool ControlMode::executeRemoteCommand (uint8_t* message, const char* requestor)
 
     case RemoteCommandTriggerRelay:
       Logger::info("Relay requested, but not onboard: ", requestor, LogAppControl);
-      queueOutMessage((uint8_t*)"No relay onboard", 16, requestor, 500);
+      if (BACKPACK_RELAY_ENABLED) {
+        for (uint8_t i = 0; i < numBackpacks; i++) {
+          if (backpacks[i]->getType() == BackpackTypeRelay) {
+            if(backpacks[i]->handleMessage (message, strlen((char*)message), requestor, chatter->getDeviceId())) {
+              queueOutMessage((uint8_t*)"Relay triggered", 15, requestor, 500);
+              return true;
+            }
+          }
+        }
+
+        queueOutMessage((uint8_t*)"Relay NOT triggered", 19, requestor, 500);
+
+      }
+      else {
+        queueOutMessage((uint8_t*)"No relay onboard", 16, requestor, 500);
+      }
       return true;
 
     case RemoteCommandBattery:
