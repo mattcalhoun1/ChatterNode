@@ -52,6 +52,8 @@ bool PreferenceHandlerImpl::isPreferenceEnabled (CommunicatorPreference pref) {
       return chatter->getDeviceStore()->getCustomPreference(StoredPrefGnssBeiDouEnabled) != 'F'; // enabled by default
     case PreferenceExperimentalFeaturesEnabled:
       return chatter->getDeviceStore()->getCustomPreference(StoredPrefExperimentalFeaturesEnabled) == 'T'; // disabled by default
+    case PreferenceAnalysisEnabled:
+      return chatter->getDeviceStore()->getCustomPreference(StoredPrefAnalysisEnabled) == 'T'; // disabled by default
   }
 
   Logger::info("Unknown preference read attempt", LogAppControl);
@@ -187,6 +189,11 @@ void PreferenceHandlerImpl::enablePreference (CommunicatorPreference pref) {
 
     case PreferenceExperimentalFeaturesEnabled:
       chatter->getDeviceStore()->setCustomPreference(StoredPrefExperimentalFeaturesEnabled, 'T');
+      break;
+
+    case PreferenceAnalysisEnabled:
+      chatter->getDeviceStore()->setCustomPreference(StoredPrefAnalysisEnabled, 'T');
+      chatter->setGraphLoggingEnabled(true);
       break;
 
     default:
@@ -336,7 +343,12 @@ void PreferenceHandlerImpl::disablePreference (CommunicatorPreference pref) {
     case PreferenceExperimentalFeaturesEnabled:
       chatter->getDeviceStore()->setCustomPreference(StoredPrefExperimentalFeaturesEnabled, 'F');
       break;
-      
+
+    case PreferenceAnalysisEnabled:
+      chatter->getDeviceStore()->setCustomPreference(StoredPrefAnalysisEnabled, 'F');
+      chatter->setGraphLoggingEnabled(false);
+      break;
+
     default:
       Logger::info("Unknown preference disable attempt", LogAppControl);
   }

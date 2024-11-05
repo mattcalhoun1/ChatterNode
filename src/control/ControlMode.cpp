@@ -131,6 +131,11 @@ StartupState ControlMode::startChatter() {
       Logger::info("Alert: Remote config is enabled!", LogAppControl);
     }
 
+    if (preferenceHandler->isPreferenceEnabled(PreferenceAnalysisEnabled)) {
+      Logger::warn("Graph Logging Enabled", LogAppControl);
+      chatter->setGraphLoggingEnabled(true);
+    }
+
     // force pruning on startup. otherwise, repeated startups
     // can get really slow
     showStatus("Prune storage");

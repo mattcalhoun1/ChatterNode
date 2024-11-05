@@ -26,7 +26,8 @@ enum CommunicatorPreference {
     PreferenceGnssGPSEnabled = 21,
     PreferenceGnssGlonassEnabled = 22,
     PreferenceGnssBeiDouEnabled = 23,
-    PreferenceExperimentalFeaturesEnabled = 24    
+    PreferenceExperimentalFeaturesEnabled = 24,
+    PreferenceAnalysisEnabled = 25 
 };
 
 enum StoredPreference {
@@ -44,7 +45,8 @@ enum StoredPreference {
     StoredPrefGnssGPSEnabled = 11,
     StoredPrefGnssGlonassEnabled = 12,
     StoredPrefGnssBeiDouEnabled = 13,
-    StoredPrefExperimentalFeaturesEnabled = 14    
+    StoredPrefExperimentalFeaturesEnabled = 14,
+    StoredPrefAnalysisEnabled = 15
 };
 
 class PreferenceHandler {
